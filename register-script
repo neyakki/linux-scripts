@@ -1,0 +1,69 @@
+#!/bin/bash
+
+# Color codes
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+help() {
+    cat <<EOF
+Usage: $0 [-a]
+
+Register scripts in bin directory
+
+Options:
+
+-d  Bin directory
+-h  Help text
+
+EOF
+}
+
+color_print() {
+    local color=$1
+    local msg=$2
+    echo -e "$color$msg$NC"
+}
+
+
+# Main script
+bin_dir="$HOME/.local/bin"
+
+# Processing options
+while getopts ":d:h" OPTION; do
+    case $OPTION in
+    d)
+        bin_dir=$OPTARG
+        shift
+        ;;
+    h)
+        help
+        exit 0
+        ;;
+    \?)
+        echo "Invalid option: -$OPTARG"
+        help >&2
+        exit 1
+        ;;
+    *) shift ;;
+    esac
+done
+
+# -print0 - опция команды find, указывающая на вывод результатов поиска с использованием нуль-символа (\0) в качестве разделителя вместо новой строки (\n)
+# IFS= — устанавливает внутренний разделитель полей (Internal Field Separator) в пустую строку, что предотвращает удаление ведущих и заключительных пробелов из считанных строк.
+# -r — опция для read, предотвращающая интерпретацию обратных слешей (\) как символов экранирования.
+# -d '' — указывает, что разделителем является нуль-символ (\0).
+find "." -print0 | while IFS= read -r -d '' f; do
+    if [ -d $f ] || [ $0 = $f ] || [ "." = $f ]; then
+        continue
+    fi
+    ln -s $(readlink -f "$f") $bin_dir/$(basename $f) &> /dev/null
+
+    if [ $? -ne 0 ]; then
+        color_print $YELLOW "Script $f is already registred"
+    else
+        color_print $GREEN "Script $f is registred"
+    fi
+done
