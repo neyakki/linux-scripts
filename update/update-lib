@@ -11,7 +11,7 @@ help() {
     cat <<EOF
 Usage: $0 [-y]
 
-Update lib
+Updating lib using the package manager
 
 Options:
 
