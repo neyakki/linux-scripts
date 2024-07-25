@@ -27,7 +27,6 @@ color_print() {
     echo -e "$color$msg$NC"
 }
 
-
 # Main script
 bin_dir="$HOME/.local/bin"
 
@@ -55,11 +54,23 @@ done
 # IFS= — устанавливает внутренний разделитель полей (Internal Field Separator) в пустую строку, что предотвращает удаление ведущих и заключительных пробелов из считанных строк.
 # -r — опция для read, предотвращающая интерпретацию обратных слешей (\) как символов экранирования.
 # -d '' — указывает, что разделителем является нуль-символ (\0).
-find "." -print0 | while IFS= read -r -d '' f; do
-    if [ -d $f ] || [ $0 = $f ] || [ "." = $f ]; then
+find "." -name "*.sh" ! -path "./.git/*" -type f -print0 | while IFS= read -r -d '' f; do
+    if [ $0 = $f ] || [ "." = $f ]; then
         continue
     fi
-    ln -s $(readlink -f "$f") $bin_dir/$(basename $f) &> /dev/null
+
+    file_name=$(basename $f)
+    link=$bin_dir/${file_name%.*}
+
+    if [ -e $link ]; then
+        rm $link
+    fi
+
+    if [ -x $f ]; then
+        chmod +x $f
+    fi
+
+    ln -s $(readlink -f "$f") $link &>/dev/null
 
     if [ $? -ne 0 ]; then
         color_print $YELLOW "Script $f is already registred"
